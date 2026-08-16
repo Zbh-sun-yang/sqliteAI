@@ -28,3 +28,13 @@ export interface QueryHistoryEntry {
   errorMessage?: string | null;
   querySource: "manual" | "natural_language";
 }
+
+export interface ExportRequest {
+  sql: string;
+  format: "csv" | "json";
+}
+
+export interface SmartExportRequest {
+  prompt: string;
+  format: "csv" | "json";
+}

@@ -118,3 +118,18 @@ class ErrorResponse(BaseModel):
     """Error response schema."""
 
     error: dict[str, Any]
+
+
+# Export Schemas
+class ExportRequest(BaseModel):
+    """Input schema for data export."""
+
+    sql: str = Field(..., min_length=1, description="SQL SELECT query to export")
+    format: Literal["csv", "json"] = Field(default="csv", description="Export format: csv or json")
+
+
+class SmartExportRequest(BaseModel):
+    """Input schema for NL-driven smart export (NL2SQL + execute + export in one step)."""
+
+    prompt: str = Field(..., min_length=5, max_length=500, description="Natural language description of the data to export")
+    format: Literal["csv", "json"] = Field(default="csv", description="Export format: csv or json")

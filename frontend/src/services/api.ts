@@ -37,3 +37,49 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/** Trigger a file download from a blob response. */
+function downloadBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+/** Export query results as CSV or JSON file download. */
+export async function exportQuery(
+  databaseName: string,
+  sql: string,
+  format: "csv" | "json"
+): Promise<void> {
+  const response = await apiClient.post(
+    `/api/v1/dbs/${databaseName}/query/export`,
+    { sql, format },
+    { responseType: "blob" }
+  );
+  const disposition = response.headers["content-disposition"] || "";
+  const match = disposition.match(/filename="?(.+?)"?$/);
+  const filename = match ? match[1] : `export.${format}`;
+  downloadBlob(response.data, filename);
+}
+
+/** One-click smart export: NL → SQL → execute → download. */
+export async function smartExport(
+  databaseName: string,
+  prompt: string,
+  format: "csv" | "json"
+): Promise<void> {
+  const response = await apiClient.post(
+    `/api/v1/dbs/${databaseName}/query/smart-export`,
+    { prompt, format },
+    { responseType: "blob" }
+  );
+  const disposition = response.headers["content-disposition"] || "";
+  const match = disposition.match(/filename="?(.+?)"?$/);
+  const filename = match ? match[1] : `smart_export.${format}`;
+  downloadBlob(response.data, filename);
+}

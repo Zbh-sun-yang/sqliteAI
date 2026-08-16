@@ -17,14 +17,19 @@ def validate_sql(sql: str, db_type: DatabaseType = DatabaseType.POSTGRESQL) -> t
 
     Args:
         sql: SQL query string to validate
-        db_type: Database type (PostgreSQL or MySQL)
+        db_type: Database type (PostgreSQL, MySQL, or SQLite)
 
     Returns:
         Tuple of (is_valid, error_message)
     """
     try:
         # Determine dialect
-        dialect = "postgres" if db_type == DatabaseType.POSTGRESQL else "mysql"
+        if db_type == DatabaseType.POSTGRESQL:
+            dialect = "postgres"
+        elif db_type == DatabaseType.MYSQL:
+            dialect = "mysql"
+        else:
+            dialect = "sqlite"
 
         # Parse SQL
         parsed = sqlglot.parse_one(sql, dialect=dialect)
@@ -49,14 +54,19 @@ def add_limit_if_missing(sql: str, limit: int = 1000, db_type: DatabaseType = Da
     Args:
         sql: SQL query string
         limit: Maximum number of rows to return (default: 1000)
-        db_type: Database type (PostgreSQL or MySQL)
+        db_type: Database type (PostgreSQL, MySQL, or SQLite)
 
     Returns:
         SQL query with LIMIT clause added if missing
     """
     try:
         # Determine dialect
-        dialect = "postgres" if db_type == DatabaseType.POSTGRESQL else "mysql"
+        if db_type == DatabaseType.POSTGRESQL:
+            dialect = "postgres"
+        elif db_type == DatabaseType.MYSQL:
+            dialect = "mysql"
+        else:
+            dialect = "sqlite"
 
         parsed = sqlglot.parse_one(sql, dialect=dialect)
         if parsed is None:
@@ -81,7 +91,7 @@ def validate_and_transform_sql(sql: str, limit: int = 1000, db_type: DatabaseTyp
     Args:
         sql: SQL query string
         limit: Maximum number of rows to return (default: 1000)
-        db_type: Database type (PostgreSQL or MySQL)
+        db_type: Database type (PostgreSQL, MySQL, or SQLite)
 
     Returns:
         Validated and transformed SQL query

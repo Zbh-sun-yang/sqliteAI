@@ -247,6 +247,13 @@ async def fetch_metadata(
         metadata_dict = await extract_postgres_metadata(database_name, pool)
     elif db_type == DatabaseType.MYSQL:
         metadata_dict = await mysql_metadata.extract_metadata(database_name, pool)
+    elif db_type == DatabaseType.SQLITE:
+        from app.adapters.sqlite import SQLiteAdapter
+        from app.adapters.base import ConnectionConfig
+        config = ConnectionConfig(url=url, name=database_name)
+        adapter = SQLiteAdapter(config)
+        result = await adapter.extract_metadata()
+        metadata_dict = result.to_dict()
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 

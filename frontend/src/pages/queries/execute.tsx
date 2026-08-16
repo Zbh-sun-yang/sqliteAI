@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Card, Button, Space, Spin, Alert, List, Typography } from "antd";
-import { PlayCircleOutlined, ReloadOutlined } from "@ant-design/icons";
-import { apiClient } from "../../services/api";
+import { Card, Button, Space, Spin, Alert, List, Typography, Input, message } from "antd";
+import { PlayCircleOutlined, ReloadOutlined, DownloadOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { apiClient, smartExport } from "../../services/api";
 import { QueryResult, QueryHistoryEntry, QueryInput } from "../../types/query";
 import { SqlEditor } from "../../components/SqlEditor";
 import { ResultTable } from "../../components/ResultTable";
 
 const { Text } = Typography;
+const { TextArea } = Input;
 
 export const QueryExecute: React.FC = () => {
   const { databaseName } = useParams<{ databaseName: string }>();
@@ -19,6 +20,11 @@ export const QueryExecute: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<QueryHistoryEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Smart export state
+  const [nlPrompt, setNlPrompt] = useState("");
+  const [smartExporting, setSmartExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
 
   useEffect(() => {
     if (databaseName) {
@@ -76,6 +82,24 @@ export const QueryExecute: React.FC = () => {
     setResult(null);
   };
 
+  const handleSmartExport = async () => {
+    if (!databaseName || !nlPrompt.trim()) {
+      setError("Please describe what data you want to export");
+      return;
+    }
+
+    setSmartExporting(true);
+    setError(null);
+    try {
+      await smartExport(databaseName, nlPrompt.trim(), exportFormat);
+      message.success(`Smart export (${exportFormat.toUpperCase()}) completed`);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Smart export failed");
+    } finally {
+      setSmartExporting(false);
+    }
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Card
@@ -126,7 +150,52 @@ export const QueryExecute: React.FC = () => {
 
           {result && (
             <Card title="Query Results" size="small">
-              <ResultTable result={result} loading={loading} />
+              <ResultTable
+                result={result}
+                loading={loading}
+                databaseName={databaseName}
+                sql={result.sql}
+              />
+            </Card>
+          )}
+
+          {/* Smart Export Section */}
+          {databaseName && (
+            <Card title="Smart Export (NL → SQL → Export)" size="small">
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <TextArea
+                  placeholder="Describe what data to export in natural language, e.g. &quot;list all users created in the last 30 days&quot;"
+                  value={nlPrompt}
+                  onChange={(e) => setNlPrompt(e.target.value)}
+                  rows={3}
+                />
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<ThunderboltOutlined />}
+                    loading={smartExporting}
+                    onClick={handleSmartExport}
+                  >
+                    Smart Export ({exportFormat.toUpperCase()})
+                  </Button>
+                  <Button.Group>
+                    <Button
+                      size="small"
+                      type={exportFormat === "csv" ? "primary" : "default"}
+                      onClick={() => setExportFormat("csv")}
+                    >
+                      CSV
+                    </Button>
+                    <Button
+                      size="small"
+                      type={exportFormat === "json" ? "primary" : "default"}
+                      onClick={() => setExportFormat("json")}
+                    >
+                      JSON
+                    </Button>
+                  </Button.Group>
+                </Space>
+              </Space>
             </Card>
           )}
         </Space>
